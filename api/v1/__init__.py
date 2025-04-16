@@ -6,7 +6,7 @@ from .endpoints.properties import router as properties_router
 
 def create_v1_router():
     router = APIRouter(prefix="/v1")
-    # router.include_router(catalog_router)
+    router.include_router(catalog_router)
     router.include_router(products_router)
     router.include_router(properties_router)
     return router

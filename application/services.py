@@ -1,3 +1,5 @@
+from typing import Dict, Optional
+
 from fastapi import HTTPException
 from domain.repositories import ProductRepository, PropertyRepository
 from domain.entities import Product, Property, PropertyValue
@@ -71,6 +73,80 @@ class ProductService:
     async def delete_product(self, uid: str) -> bool:
         await self.repository.delete(uid)
         return True
+
+    async def catalog_list_products(
+        self,
+        page: int = 1,
+        page_size: int = 10,
+        filters:  list[str] | None = None,
+        name: str | None = None,
+        sort: str = "uid",
+    ) -> dict:
+
+        parsed_filters = {}
+        if filters:
+            for filter_str in filters:
+                key, value = filter_str.split(":", 1)
+                if key not in parsed_filters:
+                    parsed_filters[key] = []
+                parsed_filters[key].append(value)
+
+        result = await self.repository.get_filtered_products(page, page_size, parsed_filters, name, sort)
+        return {
+            "products": [
+                ProductDTO(
+                    uid=p.uid,
+                    name=p.name,
+                    properties=[
+                        PropertyDTO(
+                            uid=prop.uid,
+                            name=prop.name,
+                            type=prop.type,
+                            values=[PropertyValueDTO(value_uid=v.value_uid, value=v.value) for v in prop.values]
+                        )
+                        for prop in p.properties
+                    ]
+                )
+                for p in result["products"]
+            ],
+            "count": result["count"],
+        }
+
+    async def get_filter_statistics(
+        self,
+        filters: list[str] | None = None,
+        name: str | None = None,
+    ) -> dict:
+        parsed_filters = {}
+        if filters:
+            for filter_str in filters:
+                key, value = filter_str.split(":", 1)
+                if key not in parsed_filters:
+                    parsed_filters[key] = []
+                parsed_filters[key].append(value)
+
+        filtered_products = await self.repository.get_filtered_products(filters=parsed_filters, name=name)
+
+        property_stats = {}
+        for product in filtered_products["products"]:
+            for prop in product.properties:
+                if prop.uid not in property_stats:
+                    property_stats[prop.uid] = {}
+
+                if prop.type == "int":
+
+                    values = [int(v.value) for v in prop.values]
+                    property_stats[prop.uid]["min_value"] = min(property_stats[prop.uid].get("min_value", float("inf")), min(values))
+                    property_stats[prop.uid]["max_value"] = max(property_stats[prop.uid].get("max_value", float("-inf")), max(values))
+                else:
+
+                    for value in prop.values:
+                        property_stats[prop.uid][value.value] = property_stats[prop.uid].get(value.value, 0) + 1
+
+        return {
+            "count": filtered_products["count"],
+            **property_stats,
+        }
 
 
 class PropertyService:

@@ -1,6 +1,8 @@
+from typing import List, Dict, Optional
 from uuid import uuid4
 
 from sqlalchemy.future import select
+from sqlalchemy import func, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from domain.repositories import ProductRepository
@@ -157,6 +159,91 @@ class SQLProductRepository(ProductRepository):
         await self.session.delete(db_product)
         await self.session.commit()
         return True
+
+    async def get_filtered_products(
+            self,
+            page: int = 1,
+            page_size: int = 10,
+            filters: Optional[Dict[str, List[str]]] = None,
+            name: Optional[str] = None,
+            sort: str = "uid",
+    ) -> dict:
+        stmt = select(DBProduct).options(
+            selectinload(DBProduct.properties).selectinload(DBProperty.values)
+        )
+
+        if name:
+            stmt = stmt.where(DBProduct.name.ilike(f"%{name}%"))
+
+        if filters:
+            filter_conditions = []
+            for prop_uid, values in filters.items():
+                if isinstance(values, dict) and "from" in values and "to" in values:
+                    filter_conditions.append(
+                        and_(
+                            DBProperty.uid == prop_uid,
+                            DBPropertyValue.value.between(values["from"], values["to"]),
+                        )
+                    )
+                else:
+                    filter_conditions.append(
+                        and_(
+                            DBProperty.uid == prop_uid,
+                            DBPropertyValue.value.in_(values),
+                        )
+                    )
+            stmt = stmt.join(DBProduct.properties).join(DBProperty.values).where(or_(*filter_conditions))
+
+        if sort == "name":
+            stmt = stmt.order_by(DBProduct.name.asc())
+        else:
+            stmt = stmt.order_by(DBProduct.uid.asc())
+
+        total_count = await self.session.execute(select(func.count()).select_from(stmt.subquery()))
+        total_count = total_count.scalar_one()
+
+        stmt = stmt.offset((page - 1) * page_size).limit(page_size)
+
+        result = await self.session.execute(stmt)
+        db_products = result.unique().scalars().all()
+
+        return {
+            "products": [await db_to_domain_product(p) for p in db_products],
+            "count": total_count,
+        }
+
+    async def get_filter_statistics(
+            self,
+            filters: Optional[Dict[str, List[str]]] = None,
+            name: Optional[str] = None,
+    ) -> dict:
+
+        filtered_products = await self.get_filtered_products(filters=filters, name=name)
+
+        property_stats = {}
+        for product in filtered_products["products"]:
+            for prop in product.properties:
+                if prop.uid not in property_stats:
+                    property_stats[prop.uid] = {}
+
+                if prop.type == "int":
+                    values = [int(v.value) for v in prop.values]
+                    property_stats[prop.uid]["min_value"] = min(
+                        property_stats[prop.uid].get("min_value", float("inf")), min(values)
+                    )
+                    property_stats[prop.uid]["max_value"] = max(
+                        property_stats[prop.uid].get("max_value", float("-inf")), max(values)
+                    )
+                else:
+                    for value in prop.values:
+                        property_stats[prop.uid][value.value] = (
+                                property_stats[prop.uid].get(value.value, 0) + 1
+                        )
+
+        return {
+            "count": filtered_products["count"],
+            **property_stats,
+        }
 
 
 class SQLPropertyRepository(PropertyRepository):

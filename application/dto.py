@@ -24,3 +24,8 @@ class ProductResponseDTO(BaseModel):
     uid: Optional[str] = None
     name: str
     properties: List[PropertyDTO]
+
+
+class CatalogResponse(BaseModel):
+    products: List[ProductDTO]
+    count: int
