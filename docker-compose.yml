@@ -6,6 +6,10 @@ services:
       - "8000:8000"
     depends_on:
       - db
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_HOST=${DB_HOST}
     volumes:
       - ./infrastructure/migrations/versions:/app/infrastructure/migrations/versions
       - ./api:/app/api
@@ -13,12 +17,13 @@ services:
       - ./infrastructure/db:/app/infrastructure/db
       - ./domain:/app/domain
     networks:
-     - backend
+      - backend
   db:
     container_name: "postgres_test"
     image: postgres:14.1-alpine
     restart: always
     environment:
+      - POSTGRES_HOST=${DB_HOST}
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
