@@ -175,6 +175,8 @@ class SQLProductRepository(ProductRepository):
         if name:
             stmt = stmt.where(DBProduct.name.ilike(f"%{name}%"))
 
+        # TODO нужно ли убирать префикс property_
+        # TODO разобрать кейс с запросом фильтрации
         if filters:
             filter_conditions = []
             for prop_uid, values in filters.items():
