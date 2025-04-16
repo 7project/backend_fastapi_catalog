@@ -1,4 +1,6 @@
 # Python-generated files
+*.pyc
+**/__pycache__
 __pycache__/
 *.py[oc]
 build/
@@ -8,11 +10,17 @@ wheels/
 .pytest_cache/
 .env
 .git/
+.backend_fastapi_catalog.egg-info/
 # Virtual environments
 .venv
 .venv/
 venv/
 
+.data/
+.infrastructure/migrations/versions/
 # IDE
 .idea/
 .idea
+
+*~
+~*

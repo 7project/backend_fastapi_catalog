@@ -4,4 +4,20 @@ version = "0.1.0"
 description = "Backend test case development on FastAPI"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.26.0",
+    "sqlalchemy>=2.0.25",
+    "asyncpg>=0.29.0",
+    "envparse>=0.2.0",
+    "alembic>=1.13.1",
+    "pydantic>=2.5.3",
+    "python-dotenv>=1.0.1",
+    "pyjwt>=2.8.0",
+    "bcrypt>=4.1.2",
+    "jwcrypto>=1.5.1",
+    "pydantic-settings>=2.8.1",
+    "setuptools==78.1.0",
+    "psycopg2>=2.9.10",
+]

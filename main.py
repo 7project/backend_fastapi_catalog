@@ -1,6 +1,8 @@
-def main():
-    print("Hello from backend-fastapi-catalog!")
+from app import create_app
+from uvicorn import run
 
+
+app = create_app()
 
 if __name__ == "__main__":
-    main()
+    run(app, host="0.0.0.0", port=8000)
