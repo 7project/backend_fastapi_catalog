@@ -26,7 +26,29 @@
 20. Создание скрипта для подключения к базе данных и создания миграционного скрипта
 21. Оформление
 
-#### Одна команда для запуска
-Перед запуском склонировать репозиторий
+### Одна команда для запуска
+#### Подготовка
 
-```docker-composer up --build```
+Перед запуском склонировать репозиторий:
+
+```bash
+git clone https://github.com/7project/backend_fastapi_catalog.git
+```
+
+Создать файл .env в корне проекта:
+
+```bash
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASSWORD=
+DB_NAME=
+
+DATABASE_URL=
+```
+
+Запуск:
+
+```bash
+docker-composer up --build
+```
