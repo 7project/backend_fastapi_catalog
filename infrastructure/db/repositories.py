@@ -175,26 +175,16 @@ class SQLProductRepository(ProductRepository):
         if name:
             stmt = stmt.where(DBProduct.name.ilike(f"%{name}%"))
 
-        # TODO нужно ли убирать префикс property_
-        # TODO разобрать кейс с запросом фильтрации
         if filters:
             filter_conditions = []
             for prop_uid, values in filters.items():
-                if isinstance(values, dict) and "from" in values and "to" in values:
-                    filter_conditions.append(
-                        and_(
-                            DBProperty.uid == prop_uid,
-                            DBPropertyValue.value.between(values["from"], values["to"]),
-                        )
-                    )
-                else:
-                    filter_conditions.append(
-                        and_(
-                            DBProperty.uid == prop_uid,
-                            DBPropertyValue.value.in_(values),
-                        )
-                    )
-            stmt = stmt.join(DBProduct.properties).join(DBProperty.values).where(or_(*filter_conditions))
+                property_condition = and_(
+                    DBProperty.uid == prop_uid,
+                    DBPropertyValue.value.in_(values),
+                )
+                filter_conditions.append(property_condition)
+
+            stmt = stmt.join(DBProduct.properties).join(DBProperty.values).where(and_(*filter_conditions))
 
         if sort == "name":
             stmt = stmt.order_by(DBProduct.name.asc())
