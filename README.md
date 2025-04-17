@@ -38,17 +38,17 @@ git clone https://github.com/7project/backend_fastapi_catalog.git
 Создать файл .env в корне проекта:
 
 ```bash
-DB_HOST=
-DB_PORT=
-DB_USER=
-DB_PASSWORD=
-DB_NAME=
+DB_HOST=...
+DB_PORT=...
+DB_USER=...
+DB_PASSWORD=...
+DB_NAME=...
 
-DATABASE_URL=
+DATABASE_URL=postgresql+asyncpg://...
 ```
 
 Запуск:
 
 ```bash
-docker-composer up --build
+docker-compose up --build
 ```
